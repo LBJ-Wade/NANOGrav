@@ -20,54 +20,50 @@ from enterprise.signals import signal_base
 import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
-
-savetime = True
-
-
+#Where the original data is
 datadir = os.getcwd() + '/mdc2/group1/dataset_1b'
-savedir = os.getcwd() + '/mdc2/group1/dataset_1b_correctedpars/'
+#Where the refit par files are
+pardir = os.getcwd() + '/dataset_1b_correctedpars/'
+#Where the json noise file is
+noisefile = os.getcwd() + '/mdc2/group1/challenge1_psr_noise.json'
+#Where the chains should be saved to
+#NEED TO CHANGE OUTDIR FILE ON DIFFERENT RUNS (ie open1 -> open2)
+chaindir = os.getcwd() + '/chains/dataset_1b/'
+#Where we save figures n stuff
+figdir = os.getcwd() + '/Cornerplts/'
 
-orig_parfiles = sorted(glob.glob(datadir + '/*.par'))
-orig_timfiles = sorted(glob.glob(datadir + '/*.tim'))
+def Refit_pars(origdir,newdir):
+	orig_parfiles = sorted(glob.glob(origdir + '/*.par'))
+	orig_timfiles = sorted(glob.glob(origdir + '/*.tim'))
+	#Load all of the Pulsars!
+	orig_libs_psrs = []
+	for p, t in zip(orig_parfiles, orig_timfiles):
+		orig_libs_psr = libs.tempopulsar(p, t)
+		orig_libs_psrs.append(orig_libs_psr)
 
-parfile_J0030 = datadir + '/J0030+0451.par'
-timfile_J0030 = datadir + '/J0030+0451.tim'
-
-#Load Pulsar into enterprise
-psr_J0030 = Pulsar(parfile_J0030,timfile_J0030)
-#Load Pulsar into libstempo
-libs_psr_J0030 = libs.tempopulsar(parfile = parfile_J0030,timfile = timfile_J0030)
-
-
-#All of the Pulsars!
-orig_libs_psrs = []
-for p, t in zip(orig_parfiles, orig_timfiles):
-    orig_libs_psr = libs.tempopulsar(p, t)
-    orig_libs_psrs.append(orig_libs_psr)
-
-
-#Fit the par files again
-#Save them to new directory (Overwrites ones currently used in savedir)
-for orig_libs_psr in orig_libs_psrs:
-    orig_libs_psr.fit()
-    if savetime == True:
-        #print(savedir + libs_psr.name + '.par')
-        orig_libs_psr.savepar(savedir + orig_libs_psr.name + '.par')
-        orig_libs_psr.savetim(savedir + orig_libs_psr.name + '.tim')
+	#Fit the par files again
+	#Save them to new directory (Overwrites ones currently used in savedir)
+	for orig_libs_psr in orig_libs_psrs:
+		orig_libs_psr['DM'].fit = False
+		orig_libs_psr['DM1'].fit = False
+		orig_libs_psr['DM2'].fit = False
+		orig_libs_psr.fit(iters=10)
+		orig_libs_psr.savepar(newdir + orig_libs_psr.name + '.par')
 
 
-#Check new residuals
-fit_parfiles = sorted(glob.glob(savedir + '/*.par'))
-fit_timfiles = sorted(glob.glob(savedir + '/*.tim'))
+parfiles = sorted(glob.glob(datadir + '/*.par'))
+timfiles = sorted(glob.glob(datadir + '/*.tim'))
 
-fit_libs_psrs = []
-for p, t in zip(fit_parfiles, fit_timfiles):
-    fit_libs_psr = libs.tempopulsar(p, t)
-    fit_libs_psrs.append(fit_libs_psr)
+psrs = []
+for p, t in zip(parfiles, timfiles):
+    psr = Pulsar(p, t)
+    psrs.append(psr)
 
 
-#libsplt.plotres(libs_psrs[7])
-
+# find the maximum time span to set GW frequency sampling
+tmin = [p.toas.min() for p in psrs]
+tmax = [p.toas.max() for p in psrs]
+Tspan = np.max(tmax) - np.min(tmin)
 
 ##### parameters and priors #####
 
@@ -96,41 +92,61 @@ tm = gp_signals.TimingModel()
 # full model is sum of components
 model = ef + rn + tm + eq
 
-# initialize PTA
-pta = signal_base.PTA([model(psr_J0030)])
+noise_params = ["efac", "equad",  "rn_log10_A", "rn_spec_idx"]
+
+for psr in psrs:
+	outdir = chaindir + psr.name + '/'
+	if not os.path.exists(outdir):
+		os.mkdir(outdir)
+
+	# initialize PTA
+	pta = signal_base.PTA([model(psr)])
+
+	#Pick random initial sampling
+	xs = {par.name: par.sample() for par in pta.params}
+
+	# dimension of parameter space
+	ndim = len(xs)
+
+	# initial jump covariance matrix
+	cov = np.diag(np.ones(ndim) * 0.01**2)
+
+	# Now we figure out which indices the red noise parameters have
+	rn_idx1 = pta.param_names.index(psr.name + 'red_noise_log10_equad')
+	rn_idx2 = pta.param_names.index(psr.name + 'red_noise_gamma')
+
+	# set up jump groups by red noise groups
+	ndim = len(xs)
+	groups  = [range(0, ndim)]
+	groups.extend([[rn_idx1,rn_idx2]])
+As
+	# intialize sampler
+	sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups, outDir=outdir)
+
+	# sampler for N steps
+	N = 100000
+	x0 = np.hstack(p.sample() for p in pta.params)
+	sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
 
 
-#Pick random initial sampling
-xs = {par.name: par.sample() for par in pta.params}
+	chain = np.loadtxt(outdir + 'chain_1.txt')
+	pars = sorted(xs.keys())
+	burn = int(0.25 * chain.shape[0])
 
+	#Get true noise values for pulsar to plot in corner plot (truth values)
+	with open(noisefile, 'r') as nf:
+		inputvals = json.load(nf)
+		nf.close()
+	#Unpacking dictionaries in json file to get at noise values
+	noise_vals = inputvals[psr.name]
+	truths = [noise_vals["efac"], noise_vals["rn_spec_ind"], noise_vals["rn_log10_A"], noise_vals["equad"]]
 
-# dimension of parameter space
-ndim = len(xs)
+	#Make corner plots
+	corner.corner(chain[burn:,:-4], 30, truths = truths, labels=pars)
+	plt.savefig(figdir + psr.name + '_cornerplt.pdf')
+	plt.close()
 
-# initial jump covariance matrix
-cov = np.diag(np.ones(ndim) * 0.01**2)
-
-# set up jump groups by red noise groups
-ndim = len(xs)
-groups  = [range(0, ndim)]
-groups.extend([[2,3]])
-
-# intialize sampler
-#NEED TO CHANGE OUTDIR FILE ON DIFFERENT RUNS (ie open1 -> open2)
-sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups, outDir='chains/mdc/open1/')
-
-
-# sampler for N steps
-N = 100000
-x0 = np.hstack(p.sample() for p in pta.params)
-sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
-
-
-chain = np.loadtxt('chains/mdc/open1/chain_1.txt')
-pars = sorted(xs.keys())
-burn = int(0.25 * chain.shape[0])
-
-#Plot corner plots
-#truths = [1.0, 4.33, np.log10(5e-14)]
-#corner.corner(chain[burn:,:-4], 30, labels=pars);
+	#make dictionary of pulsar parameters from these runs
+	psr_dict[psr.name] = {}
+	for p in noise_params:
 
