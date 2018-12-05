@@ -152,7 +152,7 @@ for psr in psrs:
 	#Make corner plots
 	corner.corner(chain[burn:,:-4], 30, truths = truths, labels=pars)
 	#corner.corner(chain, 30, truths = truths, labels=pars)
-	plt.savefig(figdir + psr.name + '_cornerplt.pdf')
+	plt.savefig(figdir + psr.name + '_cornerplt.png')
 	plt.close()
 
 	#make dictionary of pulsar parameters from these runs
