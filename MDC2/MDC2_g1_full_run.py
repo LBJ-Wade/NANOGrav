@@ -66,14 +66,17 @@ efac = parameter.Normal(1.0,0.1)
 log10_equad = parameter.Uniform(-8.5,5)
 
 # red noise parameters
-red_noise_log10_A = parameter.LinearExp(-20,-12)
+red_noise_log10_A = parameter.Uniform(-20,-11)
 red_noise_gamma = parameter.Uniform(0,7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.LinearExp(-18,-12)('log10_A_gw')
-gamma_gw = parameter.Constant(13/3)('gamma_gw')
+log10_A_gw = parameter.LinearExp(-18,-12)('zlog10_A_gw')
+gamma_gw = parameter.Constant(13/3)('zgamma_gw')
 
 ##### Set up signals #####
+
+# timing model
+tm = gp_signals.TimingModel()
 
 # white noise
 ef = white_signals.MeasurementNoise(efac=efac)
@@ -83,21 +86,19 @@ eq = white_signals.EquadNoise(log10_equad = log10_equad)
 pl = utils.powerlaw(log10_A=red_noise_log10_A, gamma=red_noise_gamma)
 rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
 
-# gwb (no spatial correlations)
+
 cpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
 # Hellings and Downs ORF
 orf = utils.hd_orf()
 
+#Common red noise process with no correlations
+#crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
 
-gw = gp_signals.FourierBasisGP(cpl, orf, components=30, Tspan=Tspan, name = 'gw')
-
-#crn = gp_signals.FourierBasisCommonGP(pl, orf, components=30, name='gw', Tspan=Tspan)
-
-# timing model
-tm = gp_signals.TimingModel(use_svd = True)
+# gwb with Hellings and Downs correlations
+gwb = gp_signals.FourierBasisCommonGP(pl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + rn + tm  + gw
+model = ef + eq + rn + tm  + gwb
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])
@@ -106,12 +107,7 @@ pta = signal_base.PTA([model(psr) for psr in psrs])
 #pta.set_default_params(params)
 
 #Pick random initial sampling
-xs = {}
-for par in pta.params:
-	print(par)
-	xs[par.name] = par.sample()
-	print(par.sample())
-#xs = {par.name: par.sample() for par in pta.params}
+xs = {par.name: par.sample() for par in pta.params}
 
 # dimension of parameter space
 ndim = len(xs)
@@ -132,21 +128,3 @@ sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups
 N = 100000
 x0 = np.hstack(p.sample() for p in pta.params)
 sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
-
-'''
-#Load chains to make corner plots
-chain = np.loadtxt(outdir + '/chain_1.txt')
-pars = sorted(xs.keys())
-burn = int(0.25 * chain.shape[0])
-
-#Plot and save corner plots
-corner.corner(chain[burn:,:-4], 30, labels=pars);
-plt.savefig(outdir + runname + '_cornerplt.png')
-plt.close()
-
-#Plot upperlimit histogram on gwb
-plt.hist(chain[burn:,-5], 50, normed=True, histtype='step', lw=2);
-plt.xlabel(pars[-1]);
-plt.close()
-'''
-
