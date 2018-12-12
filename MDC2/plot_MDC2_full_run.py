@@ -3,23 +3,27 @@ import corner, os, glob, json
 import numpy as np
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = 'full_run_1'
+runname = '/full_run_1'
+dataset = '/dataset_1b'
 
 topdir = os.getcwd()
 #Where the original data is
-datadir = topdir + '/mdc2/group1/dataset_1b'
+origdatadir = topdir + '/mdc2/group1' + dataset
 #Where the json noise file is
 noisefile = topdir + '/mdc2/group1/challenge1_psr_noise.json'
+#Where the dataset files are located
+datadir = topdir + dataset
 #Where the everything should be saved to (chains, cornerplts, histograms, etc.)
-outdir = topdir + '/dataset_1b/' + runname
+outdir = datadir + runname
 #param json file with index in chain
 paramfile = outdir + '/Search_params.json'
 
 
 #Load chains to make corner plots
 chain = np.loadtxt(outdir + '/chain_1.txt')
-#pars = sorted(xs.keys())
 burn = int(0.25 * chain.shape[0])
+
+print(chain.shape)
 
 #Load param files to iterate through pulsars in pta
 with open(paramfile) as pf:

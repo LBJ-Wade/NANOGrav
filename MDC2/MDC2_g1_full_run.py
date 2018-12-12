@@ -20,20 +20,16 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = 'full_run_2'
+runname = '/full_run_2'
 dataset = '/dataset_1b'
 
 topdir = os.getcwd()
 #Where the original data is
-datadir = topdir + '/mdc2/group1' + dataset
+origdatadir = topdir + '/mdc2/group1' + dataset
 #Where the json noise file is
 noisefile = topdir + '/mdc2/group1/challenge1_psr_noise.json'
 #Where the dataset files are located
 datadir = topdir + dataset
-#Where the refit par files are
-pardir = datadir + dataset +'_correctedpars/'
-#Where the chains should be saved to
-chaindir = datadir + '/chains/'
 #Where the everything should be saved to (chains, cornerplts, histograms, etc.)
 outdir = datadir + runname
 #Where we save figures n stuff
@@ -46,8 +42,8 @@ if os.path.exists(datadir) == False:
 if os.path.exists(outdir) == False:
     os.mkdir(outdir)
 
-parfiles = sorted(glob.glob(datadir + '/*.par'))
-timfiles = sorted(glob.glob(datadir + '/*.tim'))
+parfiles = sorted(glob.glob(origdatadir + '/*.par'))
+timfiles = sorted(glob.glob(origdatadir + '/*.tim'))
 
 #Loading par and tim files into enterprise Pulsar class
 psrs = []
@@ -121,7 +117,7 @@ for psr in pta.pulsars:
     param_dict[psr] = {}
     for param, idx in zip(pta.param_names,range(len(pta.param_names))):
         if param.startswith(psr):
-            param_dict[psr][param] = idx+1
+            param_dict[psr][param] = idx
 #Save to json file
 with open(outdir + '/Search_params.json','w') as paramfile:
     json.dump(param_dict,paramfile,sort_keys = True,indent = 4)
