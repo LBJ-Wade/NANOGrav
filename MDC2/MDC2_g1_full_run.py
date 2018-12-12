@@ -20,19 +20,31 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = 'full_run_1'
+runname = 'full_run_2'
+dataset = '/dataset_1b'
 
 topdir = os.getcwd()
 #Where the original data is
-datadir = topdir + '/mdc2/group1/dataset_1b'
+datadir = topdir + '/mdc2/group1' + dataset
 #Where the json noise file is
 noisefile = topdir + '/mdc2/group1/challenge1_psr_noise.json'
+#Where the dataset files are located
+datadir = topdir + dataset
 #Where the refit par files are
-pardir = topdir + '/dataset_1b/dataset_1b_correctedpars/'
+pardir = datadir + dataset +'_correctedpars/'
+#Where the chains should be saved to
+chaindir = datadir + '/chains/'
 #Where the everything should be saved to (chains, cornerplts, histograms, etc.)
-outdir = topdir + '/dataset_1b/' + runname
-#Where we save new json file
-noisedir = topdir + '/dataset_1b/'
+outdir = datadir + runname
+#Where we save figures n stuff
+figdir = datadir + '/Cornerplts/'
+#The new json file we made
+updatednoisefile = noisedir + 'fit_psr_noise.json'
+
+if os.path.exists(datadir) == False:
+    os.mkdir(datadir)
+if os.path.exists(outdir) == False:
+    os.mkdir(outdir)
 
 parfiles = sorted(glob.glob(datadir + '/*.par'))
 timfiles = sorted(glob.glob(datadir + '/*.tim'))
@@ -62,7 +74,7 @@ Tspan = np.max(tmax) - np.min(tmin)
 ##### parameters and priors #####
 
 # white noise parameters
-efac = parameter.Normal(1.0,0.1)
+efac = parameter.Uniform(0.5,3.0)
 log10_equad = parameter.Uniform(-8.5,5)
 
 # red noise parameters
@@ -98,13 +110,22 @@ orf = utils.hd_orf()
 gwb = gp_signals.FourierBasisCommonGP(pl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + rn + tm  + gwb
+model = ef + eq + rn + tm + gwb
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])
 
-#Setting white noise parameters to ones in the json file
-#pta.set_default_params(params)
+#make dictionary of pulsar parameters from these runs
+param_dict = {}
+for psr in pta.pulsars:
+    param_dict[psr] = {}
+    for param, idx in zip(pta.param_names,range(len(pta.param_names))):
+        if param.startswith(psr):
+            param_dict[psr][param] = idx+1
+#Save to json file
+with open(outdir + '/Search_params.json','w') as paramfile:
+    json.dump(param_dict,paramfile,sort_keys = True,indent = 4)
+    paramfile.close()
 
 #Pick random initial sampling
 xs = {par.name: par.sample() for par in pta.params}
