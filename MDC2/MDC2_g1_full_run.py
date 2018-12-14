@@ -35,7 +35,7 @@ outdir = datadir + runname
 #Where we save figures n stuff
 figdir = datadir + '/Cornerplts/'
 #The new json file we made
-updatednoisefile = noisedir + 'fit_psr_noise.json'
+updatednoisefile = datadir + 'fit_psr_noise.json'
 
 if os.path.exists(datadir) == False:
     os.mkdir(datadir)
@@ -78,7 +78,7 @@ red_noise_log10_A = parameter.Uniform(-20,-11)
 red_noise_gamma = parameter.Uniform(0,7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.LinearExp(-18,-12)('zlog10_A_gw')
+log10_A_gw = parameter.Uniform(-18,-12)('zlog10_A_gw')
 gamma_gw = parameter.Constant(13/3)('zgamma_gw')
 
 ##### Set up signals #####
@@ -100,13 +100,13 @@ cpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
 orf = utils.hd_orf()
 
 #Common red noise process with no correlations
-#crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
+crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
 
 # gwb with Hellings and Downs correlations
-gwb = gp_signals.FourierBasisCommonGP(pl, orf, components=30, name='gw', Tspan=Tspan)
+#gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + rn + tm + gwb
+model = ef + eq + rn + tm + crn
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])
