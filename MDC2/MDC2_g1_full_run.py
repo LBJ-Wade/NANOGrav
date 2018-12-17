@@ -20,7 +20,7 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = '/full_run_2'
+runname = '/full_run_3'
 dataset = '/dataset_1b'
 
 topdir = os.getcwd()
@@ -36,6 +36,8 @@ outdir = datadir + runname
 figdir = datadir + '/Cornerplts/'
 #The new json file we made
 updatednoisefile = datadir + 'fit_psr_noise.json'
+#The pickled pulsars
+psr_obj_file = datadir + '/psr_objects.pickle'
 
 if os.path.exists(datadir) == False:
     os.mkdir(datadir)
@@ -46,21 +48,22 @@ parfiles = sorted(glob.glob(origdatadir + '/*.par'))
 timfiles = sorted(glob.glob(origdatadir + '/*.tim'))
 
 #Loading par and tim files into enterprise Pulsar class
-psrs = []
-for p, t in zip(parfiles, timfiles):
-    psr = Pulsar(p, t)
-    psrs.append(psr)
-
-'''
-#Get true noise values for pulsar to plot in corner plot (truth values)
-with open(noisefile, 'r') as nf:
-	noise_dict = json.load(nf)
-	nf.close()
-#Unpacking dictionaries in json file to get at noise values
-params = {}
-for psr in psrs:
-	params.update(noise_dict[psr.name])
-'''
+#Load all the pulsars if no pickle file
+try:
+    #Load pulsars from pickle file
+    with open(psr_obj_file,'rb') as psrfile:
+        psrs = pickle.load(psrfile)
+        psrfile.close()
+except:
+    #If no pickle file, load and save pulsars
+    psrs = []
+    for p, t in zip(parfiles,timfiles):
+        psr = Pulsar(p, t)
+        psrs.append(psr)
+    #Save 9yr pulsars to a pickle file
+    with open(psr_obj_file,'wb') as psrfile:
+        pickle.dump(psrs,psrfile)
+        psrfile.close()
 
 # find the maximum time span to set GW frequency sampling
 tmin = [p.toas.min() for p in psrs]
@@ -78,7 +81,7 @@ red_noise_log10_A = parameter.Uniform(-20,-11)
 red_noise_gamma = parameter.Uniform(0,7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.Uniform(-18,-12)('zlog10_A_gw')
+log10_A_gw = parameter.Uniform(-20,-11)('zlog10_A_gw')
 gamma_gw = parameter.Constant(13/3)('zgamma_gw')
 
 ##### Set up signals #####
@@ -100,10 +103,10 @@ cpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
 orf = utils.hd_orf()
 
 #Common red noise process with no correlations
-crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
+#crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
 
 # gwb with Hellings and Downs correlations
-#gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
+gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
 model = ef + eq + rn + tm + crn
@@ -142,6 +145,6 @@ groups.extend([[36]])
 sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups, outDir = outdir)
 
 # sampler for N steps
-N = 100000
+N = 1e6
 x0 = np.hstack(p.sample() for p in pta.params)
 sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)

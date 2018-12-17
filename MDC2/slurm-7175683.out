@@ -1,22 +1,0 @@
-[tempo2Util.C:360] Warning: [TIM1] Please place MODE flags in the parameter file 
-[tempo2Util.C:365] Warning: [DUP1] duplicated warnings have been suppressed.
-WARNING: Could not find pulsar distance for PSR J0034-0534. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J0218+4232. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J0621+1002. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J0751+1807. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J0900-3144. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J1614-2230. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J1944+0907. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J2010-1323. Setting value to 1 with 20% uncertainty.
-WARNING: Could not find pulsar distance for PSR J2229+2643. Setting value to 1 with 20% uncertainty.
-Finished 0.10 percent in 76.243797 s Acceptance rate = 0.883Finished 0.20 percent in 156.290522 s Acceptance rate = 0.85Finished 0.30 percent in 231.297406 s Acceptance rate = 0.829667Finished 0.40 percent in 302.201466 s Acceptance rate = 0.8055Finished 0.50 percent in 372.403661 s Acceptance rate = 0.783Finished 0.60 percent in 440.255493 s Acceptance rate = 0.761167Finished 0.70 percent in 510.780025 s Acceptance rate = 0.746714Finished 0.80 percent in 583.483481 s Acceptance rate = 0.734375Finished 0.90 percent in 655.583632 s Acceptance rate = 0.720667Finished 1.00 percent in 726.598578 s Acceptance rate = 0.7085Adding DE jump with weight 50
-Finished 1.10 percent in 795.163146 s Acceptance rate = 0.693818Finished 1.20 percent in 863.675015 s Acceptance rate = 0.680667Finished 1.30 percent in 933.776628 s Acceptance rate = 0.666308Finished 1.40 percent in 1003.226726 s Acceptance rate = 0.659071Finished 1.50 percent in 1073.351264 s Acceptance rate = 0.650067Finished 1.60 percent in 1143.462312 s Acceptance rate = 0.642625Finished 1.70 percent in 1212.531896 s Acceptance rate = 0.635471Finished 1.80 percent in 1283.603820 s Acceptance rate = 0.629944Finished 1.90 percent in 1354.481746 s Acceptance rate = 0.622684Finished 2.00 percent in 1422.650642 s Acceptance rate = 0.617Finished 2.10 percent in 1492.781981 s Acceptance rate = 0.610762/opt/pulsar/python/anaconda3/5.2/envs/enterprise/lib/python3.6/site-packages/enterprise/signals/parameter.py:66: RuntimeWarning: divide by zero encountered in log
-  logpdf = np.log(self.prior(value, **kwargs))
-Traceback (most recent call last):
-  File "MDC2_g1_full_run.py", line 147, in <module>
-    sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
-  File "/opt/pulsar/python/anaconda3/5.2/envs/enterprise/lib/python3.6/site-packages/PTMCMCSampler/PTMCMCSampler.py", line 369, in sample
-    for ii in range(self.ndim)]))
-  File "/opt/pulsar/python/anaconda3/5.2/envs/enterprise/lib/python3.6/site-packages/PTMCMCSampler/PTMCMCSampler.py", line 369, in <listcomp>
-    for ii in range(self.ndim)]))
-AttributeError: module 'acor' has no attribute 'acor'
