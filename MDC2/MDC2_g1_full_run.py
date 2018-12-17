@@ -1,7 +1,7 @@
 from __future__ import division
 
 import numpy as np
-import glob, os, json
+import glob, os, json, pickle
 import matplotlib.pyplot as plt
 import scipy.linalg as sl
 
@@ -73,7 +73,7 @@ Tspan = np.max(tmax) - np.min(tmin)
 ##### parameters and priors #####
 
 # white noise parameters
-efac = parameter.Uniform(0.5,3.0)
+efac = parameter.Uniform(0.5,4.0)
 log10_equad = parameter.Uniform(-8.5,5)
 
 # red noise parameters
@@ -109,7 +109,7 @@ orf = utils.hd_orf()
 gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + rn + tm + crn
+model = ef + eq + rn + tm + gwb
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])
@@ -136,15 +136,14 @@ ndim = len(xs)
 cov = np.diag(np.ones(ndim) * 0.01**2)
 
 # set up jump groups by red noise groups
-ndim = len(xs)
 groups  = [range(0, ndim)]
 groups.extend(map(list, zip(range(0,ndim,2), range(1,ndim,2))))
-groups.extend([[36]])
+groups.extend([[ndim-1]])
 
 # intialize sampler
 sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups, outDir = outdir)
 
 # sampler for N steps
-N = 1e6
+N = 1000000
 x0 = np.hstack(p.sample() for p in pta.params)
 sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
