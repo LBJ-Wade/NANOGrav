@@ -58,8 +58,15 @@ plt.show()
 #plt.close()
 
 #Plot upperlimit histogram on gwb
-pars = ['log10_A_gw','gamma_gw']
-plt.hist(chain[burn:,-5], 30, density = True);
-plt.xlabel(pars[-2]);
+index_from_eof = -5
+pars = ['gamma_gw','log10_A_gw','Log Likelihood?','Log Likelihood?','acceptance rate','Something']
+
+#Get median of GWB histogram
+gwb_med = np.median(chain[burn:,index_from_eof])
+print(gwb_med)
+
+plt.hist(chain[burn:,index_from_eof], 50, density = True,histtype = 'step')
+plt.axvline(x=gwb_med)
+plt.xlabel(pars[index_from_eof])
 plt.show()
 #plt.close()
