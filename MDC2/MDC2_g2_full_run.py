@@ -19,9 +19,9 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = '/full_run_1'
+runname = '/red_noise_no_corr_1'
 group = '/group2'
-dataset = '/dataset_1'
+dataset = '/dataset_2'
 
 topdir = os.getcwd()
 #Where the original data is
