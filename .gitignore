@@ -23,7 +23,9 @@
 #Usually unnecessary to put on github
 ###########
 *.pickle
+*.cvm
 chain_1.txt
+
 
 # Logs and databases #
 ######################
