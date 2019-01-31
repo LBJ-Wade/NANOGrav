@@ -69,11 +69,6 @@ def Refit_pars(origdir,newdir):
             continue
         new_libs_psr.savepar(newdir + new_libs_psr.name + '.par')
 
-#Refitting par files using libstempo
-Refit_pars(origdatadir,pardir)
-#Loading par and tim files into enterprise Pulsar class
-parfiles = sorted(glob.glob(pardir + '/*.par'))
-timfiles = sorted(glob.glob(origdatadir + '/*.tim'))
 #Load all the pulsars if no pickle file
 try:
     #Load pulsars from pickle file
@@ -82,6 +77,18 @@ try:
         psrfile.close()
 except:
     #If no pickle file, load and save pulsars
+
+    #Load refit par files if they exist, else fit them and save them
+    if os.path.exists(pardir) == True:
+        parfiles = sorted(glob.glob(pardir + '/*.par'))
+    else:
+        #Refit par files using libstempo
+        Refit_pars(origdatadir,pardir)
+        parfiles = sorted(glob.glob(pardir + '/*.par'))
+
+    #Loading tim files into enterprise Pulsar class
+    timfiles = sorted(glob.glob(origdatadir + '/*.tim'))
+
     psrs = []
     for p, t in zip(parfiles,timfiles):
         psr = Pulsar(p, t)
