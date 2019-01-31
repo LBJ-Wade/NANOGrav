@@ -19,9 +19,9 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = '/red_noise_no_corr_1'
+runname = '/red_noise_with_corr_1'
 group = '/group2'
-dataset = '/dataset_1'
+dataset = '/dataset_2'
 
 topdir = os.getcwd()
 #Where the original data is
@@ -114,6 +114,7 @@ red_noise_log10_A = parameter.Uniform(-20,-11)
 red_noise_gamma = parameter.Uniform(0,7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
+#Linear exp is upper limit run! Uniform is detection
 log10_A_gw = parameter.Uniform(-20,-11)('zlog10_A_gw')
 gamma_gw = parameter.Constant(13/3)('zgamma_gw')
 
@@ -134,15 +135,15 @@ rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
 cpl = utils.powerlaw(log10_A=log10_A_gw, gamma=gamma_gw)
 
 #Common red noise process with no correlations
-crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
+#crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
 
 # gwb with Hellings and Downs correlations
 # Hellings and Downs ORF
-#orf = utils.hd_orf()
-#gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
+orf = utils.hd_orf()
+gwb = gp_signals.FourierBasisCommonGP(cpl, orf, components=30, name='gw', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + rn + tm + crn #+ gwb
+model = ef + eq + rn + tm + gwb #+ crn
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])

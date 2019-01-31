@@ -19,7 +19,7 @@ import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
-runname = '/red_noise_no_corr_1'
+runname = '/red_noise_no_corr_2'
 group = '/group2'
 dataset = '/dataset_1'
 
@@ -114,7 +114,8 @@ red_noise_log10_A = parameter.Uniform(-20,-11)
 red_noise_gamma = parameter.Uniform(0,7)
 
 # GW parameters (initialize with names here to use parameters in common across pulsars)
-log10_A_gw = parameter.Uniform(-20,-11)('zlog10_A_gw')
+#Linear exp is upper limit run! Uniform is detection
+log10_A_gw = parameter.LinearExp(-20,-11)('zlog10_A_gw')
 gamma_gw = parameter.Constant(13/3)('zgamma_gw')
 
 ##### Set up signals #####
