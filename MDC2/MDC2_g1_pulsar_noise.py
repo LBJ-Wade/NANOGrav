@@ -161,6 +161,6 @@ for psr in psrs:
 		psr_dict[psr.name][param_name] = np.mean(chain[:,idx])
 
 # Now we want to save this all as a json file
-with open(noisedir+"fit_psr_noise.json", 'w') as fpn:
+with open(noisedir+"/fit_psr_noise.json", 'w') as fpn:
     json.dump(psr_dict, fpn)
     fpn.close()
