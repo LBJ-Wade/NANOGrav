@@ -1,3 +1,68 @@
+#from __future__ import division
+#import glob
+#import os
+import numpy as np
+#import cPickle as pickle
+#from scipy.stats import skewnorm
+#import copy_reg
+
+#import warnings
+#warnings.filterwarnings("error")
+
+#from enterprise.signals import parameter
+#from enterprise.pulsar import Pulsar
+#from enterprise.signals import selections
+from enterprise.signals import signal_base
+#from enterprise.signals import white_signals
+#from enterprise.signals import gp_signals
+from enterprise.signals import deterministic_signals
+import enterprise.constants as const
+#from enterprise.signals import utils
+
+#from empirical_distributions import EmpiricalDistribution1D
+#from empirical_distributions import EmpiricalDistribution2D
+#from empirical_distributions import EmpiricalDistribution3D
+
+#from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
+
+###Justin's original version of gw_antenna_pattern
+
+def create_gw_antenna_pattern(theta, phi, gwtheta, gwphi):
+    """
+    Function to create pulsar antenna pattern functions as defined
+    in Ellis, Siemens, and Creighton (2012).
+    :param theta: Polar angle of pulsar location.
+    :param phi: Azimuthal angle of pulsar location.
+    :param gwtheta: GW polar angle in radians
+    :param gwphi: GW azimuthal angle in radians
+    
+    :return: (fplus, fcross, cosMu), where fplus and fcross
+             are the plus and cross antenna pattern functions
+             and cosMu is the cosine of the angle between the 
+             pulsar and the GW source.
+    """
+
+    # use definition from Sesana et al 2010 and Ellis et al 2012
+    m = np.array([-np.sin(gwphi), np.cos(gwphi), 0.0])
+    n = np.array([-np.cos(gwtheta)*np.cos(gwphi), 
+                  -np.cos(gwtheta)*np.sin(gwphi),
+                  np.sin(gwtheta)])
+    omhat = np.array([-np.sin(gwtheta)*np.cos(gwphi), 
+                      -np.sin(gwtheta)*np.sin(gwphi),
+                      -np.cos(gwtheta)])
+
+    phat = np.array([np.sin(theta)*np.cos(phi), 
+                     np.sin(theta)*np.sin(phi), 
+                     np.cos(theta)])
+
+    fplus = 0.5 * (np.dot(m, phat)**2 - np.dot(n, phat)**2) / (1+np.dot(omhat, phat))
+    fcross = (np.dot(m, phat)*np.dot(n, phat)) / (1 + np.dot(omhat, phat))
+    cosMu = -np.dot(omhat, phat)
+
+    return fplus, fcross, cosMu
+
+
+@signal_base.function
 def cw_delay(toas, theta, phi, pdist, p_dist=1, p_phase=None, 
              cos_gwtheta=0, gwphi=0, log10_mc=9, log10_dL=2, log10_fgw=-8, 
              phase0=0, psi=0, cos_inc=0, log10_h=None, 

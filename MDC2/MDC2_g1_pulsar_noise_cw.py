@@ -20,7 +20,7 @@ from enterprise.signals import signal_base
 import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
-import targeted_functions as fns
+import modded_cw_functions as fns
 
 #NEED TO CHANGE FILE ON DIFFERENT RUNS (ie full_run_1 -> full_run_2)
 runname = '/pulsar_noise_runs_with_cw'
