@@ -29,6 +29,7 @@ __pycache__
 *.eps
 *.png
 *.pdf
+*.txt
 
 
 # Logs and databases #
