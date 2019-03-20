@@ -19,6 +19,7 @@
 *.rar
 *.tar
 *.zip
+*.tgz
 
 #Usually unnecessary to put on github
 ###########
