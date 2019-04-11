@@ -19,6 +19,7 @@
 *.rar
 *.tar
 *.zip
+*.tgz
 
 #Usually unnecessary to put on github
 ###########
@@ -26,6 +27,10 @@
 *.cvm
 chain_1.txt
 __pycache__
+*.eps
+*.png
+*.pdf
+*.txt
 
 
 # Logs and databases #
