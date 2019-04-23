@@ -49,18 +49,22 @@ def get_noise_from_pal2(noisefile):
 
 
 #Where the enterprise 11yr datafiles are
-topdir = os.getcwd()
-
-runname = '/simGWB_2'
+runname = '/simGWB_V2_2'
 #Where the everything should be saved to (chains, cornerplts, histograms, etc.)
-outdir = topdir + '/SimRuns' + runname
+outdir = current_dir + '/SimRuns' + runname
 if os.path.exists(outdir) == False:
     os.mkdir(outdir)
 
-parpath = topdir + '/nano11/partim_new/'
-timpath = topdir + '/nano11/partim_new/'
-noisepath = topdir + '/nano11/noisefiles_new/'
-psrlistpath = topdir + '/nano11/psrlist_Tg3yr.txt'
+#Where the enterprise 11yr datafiles are
+current_dir = os.getcwd()
+splt_path = current_dir.split("/")
+top_path_idx = splt_path.index('BackgroundInjections')
+top_dir = "/".join(splt_path[0:top_path_idx+1])
+
+parpath = top_dir + '/nano11/partim_new/'
+timpath = top_dir + '/nano11/partim_new/'
+noisepath = top_dir + '/nano11/noisefiles_new/'
+psrlistpath = top_dir + '/nano11/psrlist_Tg3yr.txt'
 #The pickled pulsars
 psr_pickle_file = outdir + '/enterprise_sim_pulsars.pickle'
 
@@ -175,8 +179,8 @@ for ii,p in enumerate(t2psr):
 
 # Create GWB
 # Takes a list of libstempo pulsar objects as input.
-LT.createGWB(t2psr, Amp=1.5e-15, gam=13./3., seed=seed_gwb_1)
-LT.createGWB(t2psr, Amp=3.0e-15, gam=7./3., seed=seed_gwb_2)
+LT.createGWB(t2psr, Amp=1.3e-15, gam=13./3., seed=seed_gwb_1)
+LT.createGWB(t2psr, Amp=1.0e-15, gam=7./3., seed=seed_gwb_2)
 
 
 psrs = []

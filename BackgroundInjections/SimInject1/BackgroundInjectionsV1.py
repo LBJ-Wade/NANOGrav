@@ -64,7 +64,7 @@ def get_noise_from_pal2(noisefile):
 #Where the enterprise 11yr datafiles are
 topdir = os.getcwd()
 
-runname = '/simGWB_2'
+runname = '/simGWB_1'
 #Where the everything should be saved to (chains, cornerplts, histograms, etc.)
 outdir = topdir + '/SimRuns' + runname
 if os.path.exists(outdir) == False:
@@ -74,8 +74,24 @@ parpath = topdir + '/nano11/partim_new/'
 timpath = topdir + '/nano11/partim_new/'
 noisepath = topdir + '/nano11/noisefiles_new/'
 psrlistpath = topdir + '/nano11/psrlist_Tg3yr.txt'
-#The pickled pulsars
-psr_pickle_file = outdir + '/enterprise_sim_pulsars.pickle'
+
+
+J1909_par = parpath + 'J1909-3744' + '_NANOGrav_11yv0.gls.par'
+J1909_tim = timpath + 'J1909-3744' + '_NANOGrav_11yv0.tim'
+
+
+J1909 = T2.tempopulsar(parfile = J1909_par, timfile = J1909_tim, maxobs=30000, ephem='DE436',clk=None)
+
+
+t = np.arange(53000,56650,30.0) #observing dates for 10 years
+t += np.random.randn(len(t)) #observe every 30+/-1 days
+
+
+
+J0613_par = parpath +'J0613-0200' + '_NANOGrav_11yv0.gls.par'
+fake_J0613=LT.fakepulsar(J0613_par,obstimes=t,toaerr=0.5)
+
+
 
 encoding = "utf-8"
 psrlist_bytes = np.loadtxt(psrlistpath,dtype='S42')
@@ -189,7 +205,7 @@ for ii,p in enumerate(t2psr):
 # Create GWB
 # Takes a list of libstempo pulsar objects as input.
 LT.createGWB(t2psr, Amp=1.5e-15, gam=13./3., seed=seed_gwb_1)
-LT.createGWB(t2psr, Amp=3.0e-15, gam=7./3., seed=seed_gwb_2)
+LT.createGWB(t2psr, Amp=9.0e-15, gam=10./3., seed=seed_gwb_2)
 
 
 psrs = []
@@ -242,21 +258,20 @@ ec = white_signals.EcorrKernelNoise(log10_ecorr = log10_ecorr, selection=selecti
 pl = utils.powerlaw(log10_A=red_noise_log10_A, gamma=red_noise_gamma)
 rn = gp_signals.FourierBasisGP(spectrum=pl, components=30, Tspan=Tspan)
 
-cpl_1 = utils.powerlaw(log10_A=log10_A_gw_1, gamma=gamma_gw_1)
+cpl_1 = utils.powerlaw(log10_A=log10_A_gw_1, gamma=gamma_gw_2)
 cpl_2 = utils.powerlaw(log10_A=log10_A_gw_2, gamma=gamma_gw_2)
 
 #Common red noise process with no correlations
-crn_1 = gp_signals.FourierBasisGP(spectrum = cpl_1, components=30, Tspan=Tspan, name = 'gw')
-crn_2 = gp_signals.FourierBasisGP(spectrum = cpl_2, components=30, Tspan=Tspan, name = 'other_gw')
+#crn = gp_signals.FourierBasisGP(spectrum = cpl, components=30, Tspan=Tspan, name = 'gw')
 
 # gwb with Hellings and Downs correlations
 # Hellings and Downs ORF
-#orf = utils.hd_orf()
-#gwb_1 = gp_signals.FourierBasisCommonGP(cpl_1, orf, components=30, name='gw_1', Tspan=Tspan)
-#gwb_2 = gp_signals.FourierBasisCommonGP(cpl_2, orf, components=30, name='gw_2', Tspan=Tspan)
+orf = utils.hd_orf()
+gwb_1 = gp_signals.FourierBasisCommonGP(cpl_1, orf, components=30, name='gw_1', Tspan=Tspan)
+gwb_2 = gp_signals.FourierBasisCommonGP(cpl_2, orf, components=30, name='gw_2', Tspan=Tspan)
 
 # full model is sum of components
-model = ef + eq + ec + rn + tm + crn_1 + crn_2  #+ crn
+model = ef + eq + ec + rn + tm + gwb_1 + gwb_2  #+ crn
 
 # initialize PTA
 pta = signal_base.PTA([model(psr) for psr in psrs])
