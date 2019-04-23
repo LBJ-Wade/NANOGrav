@@ -32,6 +32,7 @@ __pycache__
 *.pdf
 *.txt
 .ipynb_checkpoints
+libstempo
 
 
 # Logs and databases #
