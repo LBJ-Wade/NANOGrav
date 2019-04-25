@@ -305,9 +305,9 @@ def add_rednoise(psr,A,gamma,components=10,seed=None,logspacing=False):
     f = N.zeros(size,'d')
 
     if logspacing:
-        dt = day*14 #2 week cadence
+        dt = 14*day/year #2 week cadence in terms of years
         f_nyquist = 1/(2*dt)
-        f_T_obs = 1/T/year
+        f_T_obs = 1/T
         f_vals = N.logspace(N.log10(f_T_obs),N.log10(f_nyquist),components)
     else:
         f_vals = N.arange(1,components+1)
@@ -712,7 +712,7 @@ def extrap1d(interpolator):
     
 def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
               clm=[N.sqrt(4.0*N.pi)], lmax=0, f0=1e-9, beta=1,
-              power=1, userSpec=None, npts=600, howml=10):
+              power=1, userSpec=None, npts=600, howml=10, logspace=False,nfreqs=int(1e2)):
     """
     Function to create GW-induced residuals from a stochastic GWB as defined
     in Chamberlin, Creighton, Demorest, et al. (2014).
@@ -788,9 +788,13 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
 
     # Define frequencies spanning from DC to Nyquist. 
     # This is a vector spanning these frequencies in increments of 1/(dur*howml).
-    f = N.arange(0, 1/(2*dt), 1/(dur*howml))
-    f_GWB = N.arange(0, 1/(2*dt), 1/(dur*howml))
-    f[0] = f[1] # avoid divide by 0 warning
+    if logspace:
+        f = N.logspace(N.log10(1/(dur*howml)),N.log10(1/(2*dt)),nfreqs)
+        f_GWB = N.logspace(N.log10(1/(dur*howml)),N.log10(1/(2*dt)),nfreqs)
+    else:
+        f = N.arange(0, 1/(2*dt), 1/(dur*howml))
+        f_GWB = N.arange(0, 1/(2*dt), 1/(dur*howml))
+        f[0] = f[1] # avoid divide by 0 warning
     Nf = len(f)
 
     # Use Cholesky transform to take 'square root' of ORF
@@ -804,7 +808,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     # strain amplitude
     if userSpec is None:
         
-        f1yr = 1/3.16e7
+        f1yr = 1/year
         alpha = -0.5 * (gam-3)
         hcf = Amp * (f/f1yr)**(alpha)
         if turnover:
