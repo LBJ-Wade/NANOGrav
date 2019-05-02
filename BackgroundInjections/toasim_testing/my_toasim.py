@@ -796,7 +796,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
         f_GWB = N.arange(0, 1/(2*dt), 1/(dur*howml))
         f[0] = f[1] # avoid divide by 0 warning
     Nf = len(f)
-
+    print(Nf)
     # Use Cholesky transform to take 'square root' of ORF
     M = N.linalg.cholesky(ORF)
 
@@ -825,7 +825,12 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
             fspec_ex = extrap1d(fspec_in)
             hcf = 10.0**fspec_ex(N.log10(f))
 
-    C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * dur * howml
+    if logspace:
+        #df is separation between frequencies
+        df = N.diff(N.concatenate((N.array([0]), f)))
+        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * df
+    else:
+        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * dur * howml
 
     ### injection residuals in the frequency domain
     Res_f = N.dot(M, w)
@@ -854,7 +859,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     for p in psr:
         p.stoas[:] += res_gw[ct]/86400.0
         ct += 1
-    return f_GWB,C
+    return f_GWB,C,Res_f
 
 def computeORFMatrix(psr):
     """
