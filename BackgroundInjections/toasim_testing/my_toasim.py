@@ -305,10 +305,8 @@ def add_rednoise(psr,A,gamma,components=10,seed=None,logspacing=False):
     f = N.zeros(size,'d')
 
     if logspacing:
-        dt = 14*day/year #2 week cadence in terms of years
-        f_nyquist = 1/(2*dt)
         f_T_obs = 1/T
-        f_vals = N.logspace(N.log10(f_T_obs),N.log10(f_nyquist),components)
+        f_vals = N.logspace(N.log10(f_T_obs),N.log10(components*f_T_obs),components)
     else:
         f_vals = N.arange(1,components+1)
         f_vals = f_vals/T
