@@ -826,7 +826,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     if logspace:
         #df is separation between frequencies
         df = N.diff(N.concatenate((N.array([0]), f)))
-        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * df
+        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 / df
     else:
         C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * dur * howml
 
