@@ -716,7 +716,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     in Chamberlin, Creighton, Demorest, et al. (2014).
     
     :param psr: pulsar object for single pulsar
-    :param Amp: Amplitude of red noise in GW units 
+    :param Amp: Amplitude of red noise in GW units
     :param gam: Red noise power law spectral index
     :param noCorr: Add red noise with no spatial correlations
     :param seed: Random number seed
@@ -730,6 +730,9 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
                      (first column is freqs, second is spectrum)
     :param npts: Number of points used in interpolation
     :param howml: Lowest frequency is 1/(howml * T) 
+    ** ANDREW'S ADDITIONS**
+    :param logspace: Selection of injection frequencies in log or linear
+    :param nfreqs: If logspace is true, it selects the number of injected frequencies
     
     :returns: list of residuals for each pulsar    
     """
@@ -788,13 +791,11 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     # This is a vector spanning these frequencies in increments of 1/(dur*howml).
     if logspace:
         f = N.logspace(N.log10(1/(dur*howml)),N.log10(1/(2*dt)),nfreqs)
-        f_GWB = N.logspace(N.log10(1/(dur*howml)),N.log10(1/(2*dt)),nfreqs)
     else:
         f = N.arange(0, 1/(2*dt), 1/(dur*howml))
-        f_GWB = N.arange(0, 1/(2*dt), 1/(dur*howml))
         f[0] = f[1] # avoid divide by 0 warning
+
     Nf = len(f)
-    print(Nf)
     # Use Cholesky transform to take 'square root' of ORF
     M = N.linalg.cholesky(ORF)
 
@@ -823,12 +824,19 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
             fspec_ex = extrap1d(fspec_in)
             hcf = 10.0**fspec_ex(N.log10(f))
 
+    C = 1 / 96 / N.pi**2 * hcf**2 / f**3
+
     if logspace:
         #df is separation between frequencies
         df = N.diff(N.concatenate((N.array([0]), f)))
-        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 / df
+        df[0] = df[1]
+        #Normalizing for logspace
+        C = C / df
     else:
-        C = 1 / 96 / N.pi**2 * hcf**2 / f**3 * dur * howml
+        #Normalizing for linspace
+        C = C * dur * howml
+
+    f_GWB = f
 
     ### injection residuals in the frequency domain
     Res_f = N.dot(M, w)
