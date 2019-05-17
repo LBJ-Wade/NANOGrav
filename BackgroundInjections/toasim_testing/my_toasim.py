@@ -710,7 +710,7 @@ def extrap1d(interpolator):
     
 def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
               clm=[N.sqrt(4.0*N.pi)], lmax=0, f0=1e-9, beta=1,
-              power=1, userSpec=None, npts=600, howml=10, logspace=False,nfreqs=int(1e2)):
+              power=1, userSpec=None, npts=600, howml=10, logspacing=False,nfreqs=int(1e2)):
     """
     Function to create GW-induced residuals from a stochastic GWB as defined
     in Chamberlin, Creighton, Demorest, et al. (2014).
@@ -743,17 +743,26 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     # number of pulsars
     Npulsars = len(psr)
 
+    for p in psr:
+        t = p.toas()
+        minx, maxx = N.min(t), N.max(t)
+        x = (t - minx) / (maxx - minx) #Normalized time span
+        T = (day/year) * (maxx - minx) #Time span in years
+        print('T = ',T)
+
     # gw start and end times for entire data set
-    start = N.min([p.toas().min()*86400 for p in psr]) - 86400
-    stop = N.max([p.toas().max()*86400 for p in psr]) + 86400
-        
+    start = N.min([p.toas().min()*day for p in psr]) - day
+    stop = N.max([p.toas().max()*day for p in psr]) + day
+
     # duration of the signal
     dur = stop - start
+    print('dur = ',dur)
+    print('dur = ',dur/year)
     
     # get maximum number of points
     if npts is None:
         # default to cadence of 2 weeks
-        npts = dur/(86400*14)
+        npts = dur/(day*14)
 
     # make a vector of evenly sampled data points
     ut = N.linspace(start, stop, npts)
@@ -788,13 +797,16 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
         ORF *= 2.0
 
     # Define frequencies spanning from DC to Nyquist. 
-    # This is a vector spanning these frequencies in increments of 1/(dur*howml).
-    if logspace:
+    if logspacing:
+        #This is a vector spanning these frequencies in logspace with nfreqs points
         f = N.logspace(N.log10(1/(dur*howml)),N.log10(1/(2*dt)),nfreqs)
     else:
+        # This is a vector spanning these frequencies in increments of 1/(dur*howml).
         f = N.arange(0, 1/(2*dt), 1/(dur*howml))
         f[0] = f[1] # avoid divide by 0 warning
 
+    print('f[0] = ',f[0])
+    print('f[-1] = ',f[-1])
     Nf = len(f)
     # Use Cholesky transform to take 'square root' of ORF
     M = N.linalg.cholesky(ORF)
@@ -826,7 +838,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
 
     C = 1 / 96 / N.pi**2 * hcf**2 / f**3
 
-    if logspace:
+    if logspacing:
         #df is separation between frequencies
         df = N.diff(N.concatenate((N.array([0]), f)))
         df[0] = df[1]
@@ -858,12 +870,178 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     for ll in range(Npulsars):
         Res[ll,:] = Res_t[ll, 10:(npts+10)]
         f = interp.interp1d(ut, Res[ll,:], kind='linear')
-        res_gw.append(f(psr[ll].toas()*86400))
+        res_gw.append(f(psr[ll].toas()*day))
 
     #return res_gw
     ct = 0
     for p in psr:
-        p.stoas[:] += res_gw[ct]/86400.0
+        p.stoas[:] += res_gw[ct]/day
+        ct += 1
+    return f_GWB,C,Res_f
+
+def my_createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
+              clm=[N.sqrt(4.0*N.pi)], lmax=0, f0=1e-9, beta=1,
+              power=1, userSpec=None, npts=600, howml=10,components=30, logspacing=False):
+    """
+    Function to create GW-induced residuals from a stochastic GWB as defined
+    in Chamberlin, Creighton, Demorest, et al. (2014).
+    
+    :param psr: pulsar object for single pulsar
+    :param Amp: Amplitude of red noise in GW units
+    :param gam: Red noise power law spectral index
+    :param noCorr: Add red noise with no spatial correlations
+    :param seed: Random number seed
+    :param turnover: Produce spectrum with turnover at frequency f0
+    :param clm: coefficients of spherical harmonic decomposition of GW power
+    :param lmax: maximum multipole of GW power decomposition
+    :param f0: Frequency of spectrum turnover
+    :param beta: Spectral index of power spectram for f << f0
+    :param power: Fudge factor for flatness of spectrum turnover
+    :param userSpec: User-supplied characteristic strain spectrum 
+                     (first column is freqs, second is spectrum)
+    :param npts: Number of points used in interpolation 
+    ** ANDREW'S ADDITIONS**
+    :param howml: Lowest frequency is 1/(howml * T) 
+    :param components: Division of frequencies injected from 1/(howml * T) to component/(howml * T)
+    :param logspacing: Selection of injection frequencies in log or linear
+    
+    :returns: list of residuals for each pulsar    
+    """
+
+    if seed is not None:
+        N.random.seed(seed)
+
+    # number of pulsars
+    Npulsars = len(psr)
+
+    start = N.min([p.toas().min()*day for p in psr])
+    stop = N.max([p.toas().max()*day for p in psr])
+    # duration of the signal
+    dur = stop - start #Time span in seconds
+    print('dur = ',dur)
+
+    # get maximum number of points
+    if npts is None:
+        # default to cadence of 2 weeks
+        npts = int(dur/(day*14))
+
+    # time resolution in seconds
+    dt = dur/npts
+
+    # make a vector of evenly sampled data points in seconds
+    ut = N.linspace(start, stop, npts)
+
+    # compute the overlap reduction function
+    if noCorr:
+        ORF = N.diag(N.ones(Npulsars)*2)
+    else:
+        psrlocs = N.zeros((Npulsars,2))
+        
+        for ii in range(Npulsars):
+            if 'RAJ' and 'DECJ' in psr[ii].pars():
+                psrlocs[ii] = N.double(psr[ii]['RAJ'].val), N.double(psr[ii]['DECJ'].val)
+            elif 'ELONG' and 'ELAT' in psr[ii].pars():
+                fac = 180./N.pi
+                # check for B name
+                if 'B' in psr[ii].name:
+                    epoch = '1950'
+                else:
+                    epoch = '2000'
+                coords = ephem.Equatorial(ephem.Ecliptic(str(psr[ii]['ELONG'].val*fac),
+                                                         str(psr[ii]['ELAT'].val*fac)),
+                                                         epoch=epoch)
+                psrlocs[ii] = float(repr(coords.ra)), float(repr(coords.dec))
+
+        psrlocs[:,1] = N.pi/2. - psrlocs[:,1]
+        anisbasis = N.array(anis.CorrBasis(psrlocs,lmax)) 
+        ORF = sum(clm[kk]*anisbasis[kk] for kk in range(len(anisbasis)))
+        ORF *= 2.0
+
+    # Define frequencies spanning from DC to Nyquist. 
+    f_low = 1/(howml*dur) #lowest frequency in years (aka resolution/spacing)
+    f_high = 1/(2*dt) #Nyquist Frequency
+    if logspacing:
+        #This is a vector spanning these frequencies in logspace with nfreqs freqs
+        nfreqs = N.ceil((f_high/f_low)) #Matching the number of frequencies from arange
+        f = N.logspace(N.log10(f_low),N.log10(f_high),nfreqs)
+    else:
+        # This is a vector spanning these frequencies in increments of 1/(dur*howml).
+        f = N.arange(0,f_high,f_low)
+        f[0] = f[1] # avoid divide by 0 warning
+
+
+    print('f[0] = ',f[0])
+    print('f[-1] = ',f[-1])
+    print('len(f) = ',len(f))
+    Nf = len(f)
+    # Use Cholesky transform to take 'square root' of ORF
+    M = N.linalg.cholesky(ORF)
+
+    # Create random frequency series from zero mean, unit variance, Gaussian distributions
+    w = N.zeros((Npulsars, Nf), complex)
+    for ll in range(Npulsars):
+        w[ll,:] = N.random.randn(Nf) + 1j*N.random.randn(Nf)
+
+    # strain amplitude
+    if userSpec is None:
+        
+        f1yr = 1/year
+        alpha = -0.5 * (gam-3)
+        hcf = Amp * (f/f1yr)**(alpha)
+        if turnover:
+            si = alpha - beta
+            hcf /= (1+(f/f0)**(power*si))**(1/power)
+
+    elif userSpec is not None:
+        
+        freqs = userSpec[:,0]
+        if len(userSpec[:,0]) != len(freqs):
+            raise ValueError("Number of supplied spectral points does not match number of frequencies!")
+        else:
+            fspec_in = interp.interp1d(N.log10(freqs), N.log10(userSpec[:,1]), kind='linear')
+            fspec_ex = extrap1d(fspec_in)
+            hcf = 10.0**fspec_ex(N.log10(f))
+
+    C = 1 / 96 / N.pi**2 * hcf**2 / f**3
+
+    if logspacing:
+        #df is separation between frequencies
+        df = N.diff(N.concatenate((N.array([0]), f)))
+        df[0] = df[1]
+        #Normalizing for logspace
+        C = C / df
+    else:
+        #Normalizing for linspace
+        C = C * dur * howml
+
+    f_GWB = f
+
+    ### injection residuals in the frequency domain
+    Res_f = N.dot(M, w)
+    for ll in range(Npulsars):
+        Res_f[ll] = Res_f[ll] * C**(0.5)    # rescale by frequency dependent factor
+        Res_f[ll,0] = 0             # set DC bin to zero to avoid infinities
+        Res_f[ll,-1] = 0            # set Nyquist bin to zero also
+
+    # Now fill in bins after Nyquist (for fft data packing) and take inverse FT
+    Res_f2 = N.zeros((Npulsars, 2*Nf-2), complex)    
+    Res_t = N.zeros((Npulsars, 2*Nf-2))
+    Res_f2[:,0:Nf] = Res_f[:,0:Nf]
+    Res_f2[:, Nf:(2*Nf-2)] = N.conj(Res_f[:,(Nf-2):0:-1])
+    Res_t = N.real(N.fft.ifft(Res_f2)/dt)
+
+    # shorten data and interpolate onto TOAs
+    Res = N.zeros((Npulsars, npts))
+    res_gw = []
+    for ll in range(Npulsars):
+        Res[ll,:] = Res_t[ll, 10:(npts+10)]
+        f = interp.interp1d(ut, Res[ll,:], kind='linear')
+        res_gw.append(f(psr[ll].toas()*day))
+
+    #return res_gw
+    ct = 0
+    for p in psr:
+        p.stoas[:] += res_gw[ct]/day
         ct += 1
     return f_GWB,C,Res_f
 
