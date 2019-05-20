@@ -1002,17 +1002,7 @@ def my_createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
             fspec_ex = extrap1d(fspec_in)
             hcf = 10.0**fspec_ex(N.log10(f))
 
-    C = 1 / 96 / N.pi**2 * hcf**2 / f**3
-
-    if logspacing:
-        #df is separation between frequencies
-        df = N.diff(N.concatenate((N.array([0]), f)))
-        df[0] = df[1]
-        #Normalizing for logspace
-        C = C / df
-    else:
-        #Normalizing for linspace
-        C = C * dur * howml
+    C = 1 / 96 / N.pi**2 * hcf**2 / f**3 / howml / dur
 
     f_GWB = f
 
@@ -1028,7 +1018,7 @@ def my_createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     Res_t = N.zeros((Npulsars, 2*Nf-2))
     Res_f2[:,0:Nf] = Res_f[:,0:Nf]
     Res_f2[:, Nf:(2*Nf-2)] = N.conj(Res_f[:,(Nf-2):0:-1])
-    Res_t = N.real(N.fft.ifft(Res_f2)/dt)
+    Res_t = N.real(N.fft.ifft(Res_f2))
 
     # shorten data and interpolate onto TOAs
     Res = N.zeros((Npulsars, npts))
