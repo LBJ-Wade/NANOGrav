@@ -808,6 +808,7 @@ def createGWB(psr, Amp, gam, noCorr=False, seed=None, turnover=False,
     print('f[0] = ',f[0])
     print('f[-1] = ',f[-1])
     Nf = len(f)
+    print('Nf = ',Nf)
     # Use Cholesky transform to take 'square root' of ORF
     M = N.linalg.cholesky(ORF)
 
