@@ -12,7 +12,7 @@ import libstempo.plot as LP
 import enterprise
 from enterprise.pulsar import Pulsar
 
-def get_noise_from_pal2(noisefile):
+def get_noise_from_file(noisefile):
     psrname = noisefile.split('/')[-1].split('_noise.txt')[0]
     fin = open(noisefile, 'r')
     lines = fin.readlines()

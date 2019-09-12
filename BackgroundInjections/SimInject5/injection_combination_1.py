@@ -30,6 +30,7 @@ pta_sim_dir = top_dir + '/pta_sim/pta_sim'
 
 sys.path.insert(0,pta_sim_dir)
 import sim_gw as SG
+import noise
 
 scratch_dir = '/scratch/ark0015/background_injections'
 
@@ -44,7 +45,8 @@ if os.path.exists(outdir) == False:
 
 #The pulsars
 psrs_wn_only_dir = background_injection_dir + '/FakePTA/'
-#noise11yr_path = backgrouninjection_dir + '/nano11/noisefiles_new/'
+noise_mdc2 =  top_dir + '/NANOGrav/MDC2/mdc2/group1/challenge1_psr_noise.json'
+#noise11yr_path = background_injection_dir + '/nano11/noisefiles_new/'
 #psrlist11yr_path = backgrouninjection_dir + '/nano11/psrlist_Tg3yr.txt'
 
 
@@ -52,9 +54,23 @@ psrs_wn_only_dir = background_injection_dir + '/FakePTA/'
 # #### Get par and tim files
 parfiles = sorted(glob.glob(psrs_wn_only_dir+'*.par'))
 timfiles = sorted(glob.glob(psrs_wn_only_dir+'*.tim'))
+"""
+noisefiles = sorted(glob.glob(noise11yr_path+'*.txt'))
+
+noise_params = {}
+for nf in noisefiles:
+    psrname = nf.split('/')[-1].split('_noise.txt')[0]
+    noise_params[psrname] = {}
+    params = noise.get_noise_from_file(nf)
+    noise_params[psrname].update(params)
+
+with open(outdir + '/noise_parameters.json', 'w') as fp:
+    json.dump(noise_params, fp, sort_keys=True,indent=4)
+"""
+noise_params = noise.load_noise_files(noisepath=noise_mdc2)
 
 
-# #### Instantiate a "Simulation class"
+##### Instantiate a "Simulation class"
 sim = SG.Simulation(parfiles,timfiles)
 
 #Save Injection Parameters
@@ -67,7 +83,9 @@ injection_parameters['Background_2'] = {'log_10_amp':np.log10(background_amp_2),
                                         'seed':background_seed_2}
 
 with open(outdir + '/injection_parameters.json', 'w') as fp:
-    json.dump(injection_parameters, fp, sort_keys=True)
+    json.dump(injection_parameters, fp, sort_keys=True,indent=4)
+
+sim.add_white_noise(noise_params)
 
 sim.createGWB(background_amp_1,gamma_gw=background_gamma_1,seed=background_seed_1)
 sim.createGWB(background_amp_2,gamma_gw=background_gamma_2,seed=background_seed_2,noCorr=True)
@@ -80,3 +98,4 @@ sim.init_ePulsars()
 with open(outdir + '/enterprise_pickled_psrs.pickle','wb') as psrfile:
     pickle.dump(sim.psrs,psrfile)
     psrfile.close()
+"""
