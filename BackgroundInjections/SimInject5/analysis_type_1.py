@@ -27,15 +27,28 @@ if os.path.exists(outdir) == False:
 with open(injection_combination_subdirectory + '/enterprise_pickled_psrs.pickle', "rb") as f:
         psrs = pickle.load(f)
 
-# #### Use Simple GWB model to instantiate enterprise PTA
+##### Use create pta analysis to instantiate enterprise PTA
 #Fixed GWB power law
 #Varied RN gamma and amplitude
 background_gammas = [13./3.]
-pta = SG.model_simple_multiple_gwbs(psrs,gammas=background_gammas,red_noise=True)
+pta = SG.create_pta_analysis(psrs, gammas = background_gammas, psd='powerlaw', components=30, freqs=None,
+                 upper_limit=False, bayesephem=False, select=None,
+                 white_noise=True, red_noise=True, Tspan=None,orf=None)
 
 # #### Save params for plotting
 with open(outdir + '/sample_parameters.json', 'w') as fp:
     json.dump(pta.param_names, fp)
+
+#Get Noise Values
+with open(scratch_dir + '/challenge1_psr_noise.json', 'rb') as fin:
+    noise_json =json.load(fin)
+
+noiseparams = {}
+for p in psrs:
+    noiseparams.update(noise_json[p.name])
+
+#Set Fixed WN values
+pta.set_default_params(noiseparams)
 
 # #### Set up sampler and initial samples
 
