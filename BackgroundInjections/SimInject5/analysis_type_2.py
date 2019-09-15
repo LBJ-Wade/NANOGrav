@@ -9,7 +9,7 @@ analysis_directory = scratch_directory + '/analysis_type_2'
 """BELOW ARE THE PARAMETERS TO CHANGE BETWEEN ANALYSIS TYPES"""
 
 """BELOW ARE THE PARAMETERS TO CHANGE BETWEEN ANALYSES"""
-runname = '/analysis_2'
+runname = '/analysis_1'
 """ABOVE ARE THE PARAMETERS TO CHANGE BETWEEN ANALYSES"""
 
 """BELOW ARE THE PARAMETERS TO CHANGE BETWEEN COMBINATIONS"""
@@ -29,15 +29,23 @@ if os.path.exists(outdir) == False:
 with open(injection_combination_subdirectory + '/enterprise_pickled_psrs.pickle', "rb") as f:
         psrs = pickle.load(f)
 
-# #### Use Simple GWB model to instantiate enterprise PTA
+##### Use create pta analysis to instantiate enterprise PTA
 #Fixed GWB power law
 #Varied RN gamma and amplitude
 background_gammas = [13./3.]
-pta = SG.model_simple_multiple_gwbs(psrs,gammas=background_gammas,red_noise=True)
+pta = SG.create_pta_analysis(psrs, gammas = background_gammas, psd='powerlaw', components=30, freqs=None,
+                 upper_limit=False, bayesephem=False, select=None,
+                 white_noise=True, red_noise=True, Tspan=None,orf=None)
 
 # #### Save params for plotting
 with open(outdir + '/sample_parameters.json', 'w') as fp:
     json.dump(pta.param_names, fp)
+
+#Get Noise Values
+with open(scratch_dir + '/challenge1_psr_noise.json', 'rb') as fin:
+    noise_json =json.load(fin)
+
+noiseparams = noise.handle_noise_parameters(noise_json)
 
 # #### Set up sampler and initial samples
 

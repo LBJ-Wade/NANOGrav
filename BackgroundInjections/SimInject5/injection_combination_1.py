@@ -44,16 +44,17 @@ if os.path.exists(outdir) == False:
     os.mkdir(outdir)
 
 #The pulsars
-psrs_wn_only_dir = background_injection_dir + '/FakePTA/'
-noise_mdc2 =  top_dir + '/NANOGrav/MDC2/mdc2/group1/challenge1_psr_noise.json'
+#psrs_wn_only_dir = background_injection_dir + '/FakePTA/'
+noise_mdc2 =  top_dir + '/NANOGrav/MDC2/mdc2/group1/group1_psr_noise.json'
+mdc2_psrs = top_dir + '/NANOGrav/MDC2/mdc2/group1/dataset_1a/'
 #noise11yr_path = background_injection_dir + '/nano11/noisefiles_new/'
 #psrlist11yr_path = backgrouninjection_dir + '/nano11/psrlist_Tg3yr.txt'
 
 
 
 # #### Get par and tim files
-parfiles = sorted(glob.glob(psrs_wn_only_dir+'*.par'))
-timfiles = sorted(glob.glob(psrs_wn_only_dir+'*.tim'))
+parfiles = sorted(glob.glob(mdc2_psrs+'*.par'))
+timfiles = sorted(glob.glob(mdc2_psrs+'*.tim'))
 """
 noisefiles = sorted(glob.glob(noise11yr_path+'*.txt'))
 
@@ -98,4 +99,3 @@ sim.init_ePulsars()
 with open(outdir + '/enterprise_pickled_psrs.pickle','wb') as psrfile:
     pickle.dump(sim.psrs,psrfile)
     psrfile.close()
-"""

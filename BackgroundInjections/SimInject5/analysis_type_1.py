@@ -43,9 +43,7 @@ with open(outdir + '/sample_parameters.json', 'w') as fp:
 with open(scratch_dir + '/challenge1_psr_noise.json', 'rb') as fin:
     noise_json =json.load(fin)
 
-noiseparams = {}
-for p in psrs:
-    noiseparams.update(noise_json[p.name])
+noiseparams = noise.handle_noise_parameters(noise_json)
 
 #Set Fixed WN values
 pta.set_default_params(noiseparams)

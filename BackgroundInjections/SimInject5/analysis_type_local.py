@@ -1,25 +1,33 @@
 import numpy as np
-import os,json,pickle
+import sys,os,json,pickle
 
+from enterprise_extensions import model_utils
+from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
+
+current_path = os.getcwd()
+splt_path = current_path.split("/")
+
+top_path_idx = splt_path.index('nanograv')
+top_dir = "/".join(splt_path[0:top_path_idx+1])
+
+background_injection_dir = top_dir + '/NANOGrav/BackgroundInjections'
+pta_sim_dir = top_dir + '/pta_sim/pta_sim'
+
+sys.path.insert(0,pta_sim_dir)
 import sim_gw as SG
+import noise
 
-scratch_directory = '/scratch/ark0015/background_injections'
-analysis_directory = scratch_directory + '/analysis_type_3'
+noise_mdc2 =  top_dir + '/NANOGrav/MDC2/mdc2/group1/group1_psr_noise.json'
 
-"""BELOW ARE THE PARAMETERS TO CHANGE BETWEEN COMBINATIONS"""
-injection_combination_directory = scratch_directory + '/injection_combination_1'
-"""ABOVE ARE THE PARAMETERS TO CHANGE BETWEEN COMBINATIONS"""
-
-"""BELOW ARE THE PARAMETERS TO CHANGE BETWEEN INJECTIONS"""
-injection_combination_subdirectory = injection_combination_directory + '/simulation_1'
-"""ABOVE ARE THE PARAMETERS TO CHANGE BETWEEN INJECTIONS"""
+simdir = current_path + '/SimRuns'
+injection_combination_subdirectory = simdir + '/simGWB_1'
 
 """BELOW ARE THE PARAMETERS TO CHANGE BETWEEN ANALYSES"""
 runname = '/analysis_1'
 """ABOVE ARE THE PARAMETERS TO CHANGE BETWEEN ANALYSES"""
 
 #Where the everything should be saved to (chains,etc.)
-outdir = analysis_directory + runname
+outdir = injection_combination_subdirectory + runname
 if os.path.exists(outdir) == False:
     os.mkdir(outdir)
 
@@ -40,10 +48,13 @@ with open(outdir + '/sample_parameters.json', 'w') as fp:
     json.dump(pta.param_names, fp)
 
 #Get Noise Values
-with open(scratch_dir + '/challenge1_psr_noise.json', 'rb') as fin:
+with open(noise_mdc2, 'rb') as fin:
     noise_json =json.load(fin)
 
 noiseparams = noise.handle_noise_parameters(noise_json)
+
+#Set Fixed WN values
+pta.set_default_params(noiseparams)
 
 # #### Set up sampler and initial samples
 
@@ -64,6 +75,7 @@ sampler = ptmcmc(ndim, pta.get_lnlikelihood, pta.get_lnprior, cov, groups=groups
 
 # # Sample!
 # sampler for N steps
-N = int(1e5)
+N = int(1e3)
 x0 = np.hstack(p.sample() for p in pta.params)
 #sampler.sample(x0, N, SCAMweight=30, AMweight=15, DEweight=50)
+
