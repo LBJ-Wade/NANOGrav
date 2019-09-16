@@ -21,7 +21,6 @@ background_seed_2 = 1667
 
 current_path = os.getcwd()
 splt_path = current_path.split("/")
-
 top_path_idx = splt_path.index('nanograv')
 top_dir = "/".join(splt_path[0:top_path_idx+1])
 
