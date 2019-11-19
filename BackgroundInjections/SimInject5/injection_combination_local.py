@@ -33,7 +33,7 @@ import noise
 
 scratch_dir = '/scratch/ark0015/background_injections'
 
-runname = '/simGWB_1'
+runname = '/simGWB_2'
 #Where the everything should be saved to (chains,etc.)
 simdir = current_path + '/SimRuns'
 outdir = simdir + runname
@@ -47,13 +47,26 @@ if os.path.exists(outdir) == False:
 noise_mdc2 =  top_dir + '/NANOGrav/MDC2/mdc2/group1/group1_psr_noise.json'
 mdc2_psrs = top_dir + '/NANOGrav/MDC2/mdc2/group1/dataset_1a/'
 #noise11yr_path = background_injection_dir + '/nano11/noisefiles_new/'
-#psrlist11yr_path = backgrouninjection_dir + '/nano11/psrlist_Tg3yr.txt'
+psrlist_11yr_file = background_injection_dir + '/nano11/psrlist_Tg3yr.txt'
 
 
 
 # #### Get par and tim files
 parfiles = sorted(glob.glob(mdc2_psrs+'*.par'))
 timfiles = sorted(glob.glob(mdc2_psrs+'*.tim'))
+
+encoding = 'utf-8'
+psr_list_bytes = np.loadtxt(psrlist_11yr_file,dtype='S42')
+psr_list = []
+for psr in psr_list_bytes:
+    psr_list.append(psr.decode(encoding))
+
+def get_psrname(file,name_sep='_'):
+    return file.split('/')[-1].split(name_sep)[0]
+parfiles = [f for f in parfiles if get_psrname(f,name_sep='.') in psr_list]
+timfiles = [f for f in timfiles if get_psrname(f,name_sep='.') in psr_list]
+
+print(len(parfiles))
 """
 noisefiles = sorted(glob.glob(noise11yr_path+'*.txt'))
 
