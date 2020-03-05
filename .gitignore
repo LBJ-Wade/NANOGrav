@@ -23,6 +23,7 @@
 
 #Usually unnecessary to put on github
 ###########
+chains/
 *.pickle
 *.cvm
 chain_1.txt
