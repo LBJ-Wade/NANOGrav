@@ -20,7 +20,7 @@ noise_path = top_dir + "/pta_sim/pta_sim"
 sys.path.insert(0, noise_path)
 sys.path.insert(0, e_e_path)
 import enterprise_extensions as e_e
-from enterprise_extensions import models_2, sampler
+from enterprise_extensions import models, sampler
 from enterprise_extensions.sampler import JumpProposal
 import noise
 
@@ -65,7 +65,7 @@ for psr in psrs:
 # tmparam_list = [ 'PB', 'A1', 'XDOT', 'EPS1', 'EPS2', 'EPS1DOT', 'EPS2DOT']
 # tmparam_list = [ 'PB', 'A1', 'EPS1', 'EPS2']
 tmparam_list = tmparams_nodmx
-tmparam_list = ["F0", "F1"]
+#tmparam_list = ["F0", "F1"]
 print("Sampling these values: ", tmparam_list)
 
 """noisefiles = sorted(glob.glob(top_dir + '/12p5yr/*.json'))
@@ -75,7 +75,7 @@ for nf in noisefiles:
         params.update(json.load(fin))"""
 
 
-pta = models_2.model_general(
+pta = models.model_general(
     psrs,
     tm_var=True,
     tm_linear=False,
