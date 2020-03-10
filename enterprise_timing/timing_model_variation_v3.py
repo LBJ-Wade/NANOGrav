@@ -10,6 +10,11 @@ from enterprise.pulsar import Pulsar
 import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
+"""current_path = os.getcwd()
+splt_path = current_path.split("/")
+top_path_idx = splt_path.index("akaiser")
+top_dir = "/".join(splt_path[0 : top_path_idx + 1])"""
+
 current_path = os.getcwd()
 splt_path = current_path.split("/")
 top_path_idx = splt_path.index("nanograv")
@@ -24,19 +29,19 @@ from enterprise_extensions import models, sampler
 from enterprise_extensions.sampler import JumpProposal
 import noise
 
-psrlist = ["J2317+1439"]
-datadir = top_dir + "/5yr/NANOGrav_dfg+12_20120911"
-# outdir = current_path + "/chains/" + psrlist[0] + "_red_var_white_fixed/"
-outdir = current_path + "/chains/" + "messing_around/"
+psrlist = ["J1640+2224"]
+datadir = top_dir + "/9yr"
+outdir = current_path + "/chains/9yr/" + psrlist[0] + "_all_var/"
+#outdir = current_path + "/chains/" + "messing_around/"
 
 parfiles = sorted(glob.glob(datadir + "/par/*.par"))
 timfiles = sorted(glob.glob(datadir + "/tim/*.tim"))
 
-noisefile = top_dir + "/5yr/noisefiles/{}_noise.txt".format(psrlist[0].split("J")[1])
+"""noisefile = top_dir + "/5yr/noisefiles/{}_noise.txt".format(psrlist[0].split("J")[1])
 tmpnoisedict = noise.get_noise_from_file(noisefile)
 noisedict = {}
 for key in tmpnoisedict.keys():
-    noisedict["_".join(key.split("-"))] = tmpnoisedict[key]
+    noisedict["_".join(key.split("-"))] = tmpnoisedict[key]"""
 
 # filter
 parfiles = [
@@ -80,6 +85,7 @@ pta = models.model_general(
     tm_var=True,
     tm_linear=False,
     tmparam_list=tmparam_list,
+    tm_prior="bounded-normal",
     common_psd="powerlaw",
     red_psd="powerlaw",
     orf=None,
@@ -91,7 +97,7 @@ pta = models.model_general(
     wgts=None,
     logfreq=False,
     nmodes_log=10,
-    noisedict=noisedict,
+    noisedict=None,
     tm_svd=False,
     tm_norm=True,
     gamma_common=None,
@@ -106,7 +112,7 @@ pta = models.model_general(
     dm_type="gp",
     dm_psd="powerlaw",
     dm_annual=False,
-    white_vary=False,
+    white_vary=True,
     gequad=False,
     dm_chrom=False,
     dmchrom_psd="powerlaw",
@@ -120,7 +126,6 @@ pta = models.model_general(
 
 # dimension of parameter space
 params = pta.param_names
-print("params",pta.params)
 ndim = len(params)
 # initial jump covariance matrix
 cov = np.diag(np.ones(ndim) * 0.1 ** 2)
@@ -131,7 +136,6 @@ tm_groups = e_e.sampler.get_timing_groups(pta)
 for tm_group in tm_groups:
     groups.append(tm_group)
 
-print('Before Sampler')
 sampler = ptmcmc(
     ndim,
     pta.get_lnlikelihood,
@@ -141,7 +145,6 @@ sampler = ptmcmc(
     outDir=outdir,
     resume=False,
 )
-print('After Sampler')
 np.savetxt(outdir + "/pars.txt", list(map(str, pta.param_names)), fmt="%s")
 np.savetxt(
     outdir + "/priors.txt",

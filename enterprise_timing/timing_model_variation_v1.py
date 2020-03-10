@@ -10,6 +10,10 @@ from enterprise.pulsar import Pulsar
 import corner
 from PTMCMCSampler.PTMCMCSampler import PTSampler as ptmcmc
 
+"""current_path = os.getcwd()
+splt_path = current_path.split("/")
+top_path_idx = splt_path.index("akaiser")
+top_dir = "/".join(splt_path[0 : top_path_idx + 1])"""
 current_path = os.getcwd()
 splt_path = current_path.split("/")
 top_path_idx = splt_path.index("nanograv")
@@ -27,7 +31,7 @@ import noise
 #psrlist = ["J2317+1439"]
 psrlist = ["J1909-3744"]
 datadir = top_dir + "/5yr/NANOGrav_dfg+12_20120911"
-outdir = current_path + "/chains/" + psrlist[0] + "_all_var_4/"
+outdir = current_path + "/chains/5yr/" + psrlist[0] + "_all_var_5/"
 
 parfiles = sorted(glob.glob(datadir + "/par/*.par"))
 timfiles = sorted(glob.glob(datadir + "/tim/*.tim"))
@@ -80,6 +84,7 @@ pta = e_e.models.model_general(
     tm_var=True,
     tm_linear=False,
     tmparam_list=tmparam_list,
+    tm_prior="uniform",
     common_psd="powerlaw",
     red_psd="powerlaw",
     orf=None,
@@ -156,8 +161,6 @@ for p in pta.params:
         if cat in p.name.split("_"):
             sampler.addProposalToCycle(jp.draw_from_par_prior(p.name), 20)
 
-print(pta.params)
-print(s)
 # sampler for N steps
 N = int(1e6)
 x0 = np.hstack(p.sample() for p in pta.params)
